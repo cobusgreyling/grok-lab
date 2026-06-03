@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>grok-lab — 4 viral-grade xAI Grok experiments</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+    
+    :root {
+      --accent: #f97316;
+    }
+    
+    body {
+      font-family: 'Inter', system_ui, sans-serif;
+    }
+    
+    .font-display {
+      font-family: 'Space Grotesk', 'Inter', system_ui, sans-serif;
+      font-weight: 600;
+    }
+
+    .grok-card {
+      background: #171717;
+      border: 1px solid #262626;
+      transition: transform 0.2s cubic-bezier(0.23, 1, 0.32, 1), 
+                  box-shadow 0.2s cubic-bezier(0.23, 1, 0.32, 1),
+                  border-color 0.2s;
+    }
+    
+    .grok-card:hover {
+      transform: translateY(-2px);
+      border-color: #3f3f46;
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+    }
+
+    .accent {
+      color: #f97316;
+    }
+
+    .section-header {
+      font-size: 13px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .nav-active {
+      color: white;
+      border-bottom: 2px solid #f97316;
+    }
+
+    .app-screenshot {
+      border: 1px solid #262626;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .app-screenshot:hover {
+      transform: scale(1.015);
+    }
+
+    .terminal {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      background: #111;
+      border: 1px solid #262626;
+    }
+
+    .metric {
+      font-size: 10px;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body class="bg-[#0a0a0a] text-[#ededed] min-h-screen">
+  <!-- Nav -->
+  <nav class="border-b border-[#262626] bg-[#0a0a0a]/95 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-[#f97316] to-orange-600 flex items-center justify-center">
+            <i class="fa-solid fa-microphone text-white text-lg"></i>
+          </div>
+          <div>
+            <span class="font-display text-2xl font-semibold tracking-tighter">grok-lab</span>
+          </div>
+        </div>
+        <div class="hidden md:flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-1 rounded-full bg-[#171717] border border-[#262626]">
+          <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+          <span class="text-[#a1a1aa]">4 experiments</span>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-4">
+        <a href="https://github.com/cobusgreyling/grok-lab" target="_blank" 
+           class="flex items-center gap-2 text-sm px-4 py-2 rounded-2xl border border-[#262626] hover:bg-[#171717] transition-colors">
+          <i class="fa-brands fa-github"></i>
+          <span class="hidden sm:inline">GitHub</span>
+        </a>
+        <a href="https://github.com/cobusgreyling/grok-lab" target="_blank"
+           class="px-5 py-2 rounded-2xl bg-white text-black font-medium text-sm flex items-center gap-2 hover:bg-[#f4f4f5]">
+          <span>Clone repo</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <div class="max-w-6xl mx-auto px-6 pt-12 pb-8">
+    <div class="flex flex-col items-center text-center">
+      <div class="inline-flex items-center gap-2 rounded-full bg-[#171717] border border-[#262626] px-3 py-1 mb-4">
+        <span class="text-[#f97316] text-xs font-mono tracking-[1px]">xAI</span>
+        <span class="text-[#a1a1aa] text-xs">•</span>
+        <span class="text-xs text-[#a1a1aa]">Open source experiments</span>
+      </div>
+      
+      <h1 class="font-display text-7xl sm:text-7xl tracking-tighter font-semibold mb-3">
+        grok-lab
+      </h1>
+      <p class="text-2xl text-[#a1a1aa] max-w-md tracking-tight">
+        4 viral-grade experiments built on xAI Grok
+      </p>
+      
+      <div class="flex flex-wrap justify-center gap-3 mt-8">
+        <a href="https://github.com/cobusgreyling/grok-lab" target="_blank"
+           class="px-8 py-3.5 rounded-3xl bg-[#f97316] hover:bg-orange-500 transition font-medium text-black flex items-center gap-2 text-base">
+          <i class="fa-solid fa-download"></i>
+          <span>Clone &amp; run locally</span>
+        </a>
+        <a href="#experiments"
+           class="px-8 py-3.5 rounded-3xl border border-[#262626] hover:bg-[#171717] transition font-medium flex items-center gap-2 text-base">
+          Explore the experiments
+        </a>
+      </div>
+      
+      <div class="mt-6 text-xs text-[#52525b]">
+        All apps work instantly in demo mode. Paste your xAI key for real Grok models.
+      </div>
+    </div>
+  </div>
+
+  <!-- Header image -->
+  <div class="max-w-6xl mx-auto px-6 pb-10">
+    <div class="rounded-3xl overflow-hidden border border-[#262626] shadow-2xl">
+      <img src="./images/grok-lab-header.png" alt="grok-lab header banner" class="w-full h-auto">
+    </div>
+    <div class="text-center mt-3">
+      <a href="https://github.com/cobusgreyling/grok-lab" target="_blank" class="text-[#f97316] text-xs flex items-center justify-center gap-1 hover:underline">
+        <span>View on GitHub</span> <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Status / Quick start -->
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="bg-[#171717] border border-[#262626] rounded-3xl p-6 md:p-8 mb-12">
+      <div class="flex flex-col md:flex-row md:items-center gap-6">
+        <div class="flex-1">
+          <div class="section-header text-[#f97316] mb-2">Current status</div>
+          <p class="text-[#a1a1aa]">
+            All apps have polished, key-optional demos that run instantly. 
+            <span class="text-white">roast-voice</span> and <span class="text-white">grok-threads</span> call real <code class="text-[#f97316]">grok-4.3</code> when you paste a key. 
+            Full realtime voice WebSocket is the next major milestone (guide included).
+          </p>
+        </div>
+        <div>
+          <a href="#quickstart" 
+             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl border border-[#262626] hover:border-[#f97316] text-sm font-medium">
+            <i class="fa-solid fa-terminal"></i>
+            <span>Quick start</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Experiments -->
+  <div id="experiments" class="max-w-6xl mx-auto px-6 pb-12">
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <div class="section-header text-[#f97316]">The four experiments</div>
+        <h2 class="text-4xl font-semibold tracking-tighter">Built for sharing, forking &amp; remixing</h2>
+      </div>
+      <div class="hidden md:block text-xs text-[#52525b] max-w-[220px] text-right">
+        Each app is a standalone Next.js project. Vercel one-click deploy friendly.
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- Roast Voice -->
+      <div class="grok-card rounded-3xl p-6 flex flex-col">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">🎙️</div>
+              <div>
+                <div class="font-semibold text-2xl tracking-tight">roast-voice</div>
+                <div class="text-[#f97316] text-sm">Brutal honesty, out loud</div>
+              </div>
+            </div>
+          </div>
+          <a href="https://github.com/cobusgreyling/grok-lab/tree/main/apps/roast-voice" target="_blank" 
+             class="text-xs px-3 py-1 rounded-full border border-[#262626] hover:bg-[#111] flex items-center gap-1">
+            <i class="fa-brands fa-github"></i>
+            <span>source</span>
+          </a>
+        </div>
+
+        <div class="text-sm text-[#a1a1aa] mb-4 leading-relaxed">
+          Deliver brutally honest, quotable voice roasts from Grok and make exporting shareable clips trivial.
+        </div>
+
+        <div class="app-screenshot mb-5">
+          <img src="./images/screenshots/roast-voice.png" alt="roast-voice app screenshot" class="w-full">
+        </div>
+
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-[#111] border border-[#262626]">Next.js 16</span>
+          <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-[#111] border border-[#262626]">Web Speech API</span>
+          <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-[#111] border border-[#262626]">grok-4.3</span>
+        </div>
+
+        <div class="mt-auto">
+          <div class="terminal text-xs p-3 rounded-2xl text-[#a1a1aa] mb-3">
+            cd apps/roast-voice<br>
+            npm install<br>
+            npm run dev
+          </div>
+          <div class="flex gap-2">
+            <a href="https://github.com/cobusgreyling/grok-lab/tree/main/apps/roast-voice" target="_blank"
+               class="flex-1 text-center text-sm py-2.5 rounded-2xl border border-[#262626] hover:bg-[#111]">View source</a>
+            <button onclick="copyCommand('cd apps/roast-voice && npm install && npm run dev')" 
+                    class="flex-1 text-sm py-2.5 rounded-2xl bg-[#f97316] text-black font-medium">Copy run command</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Voice Lab -->
+      <div class="grok-card rounded-3xl p-6 flex flex-col">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">🔊</div>
+              <div>
+                <div class="font-semibold text-2xl tracking-tight">voice-lab</div>
+                <div class="text-[#f97316] text-sm">The canonical client</div>
+              </div>
+            </div>
+          </div>
+          <a href="https://github.com/cobusgreyling/grok-lab/tree/main/apps/voice-lab" target="_blank" 
+             class="text-xs px-3 py-1 rounded-full border border-[#262626] hover:bg-[#111] flex items-center gap-1">
+            <i class="fa-brands fa-github"></i>
+            <span>source</span>
+          </a>
+        </div>
+
+        <div class="text-sm text-[#a1a1aa] mb-4 leading-relaxed">
+          The canonical open-source reference implementation for voice + tools + personalities when talking to Grok.
+        </div>
+
+        <div class="app-screenshot mb-5">
+          <img src="./images/screenshots/voice-lab.png" alt="voice-lab app screenshot" class="w-full">
+        </div>
+
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-[#111] border border-[#262626]">Personalities</span>
+          <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-[#111] border border-[#262626]">X search</span>
+          <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-[#111] border border-[#262626]">Tool calling</span>
+        </div>
+
+        <div class="mt-auto">
+          <div class="terminal text-xs p-3 rounded-2xl text-[#a1a1aa] mb-3">
+            cd apps/voice-lab<br>
+            npm install<br>
+            npm run dev
+          </div>
+          <div class="flex gap-2">
+            <a href="https://github.com/cobusgreyling/grok-lab/tree/main/apps/voice-lab" target="_blank"
+               class="flex-1 text-center text-sm py-2.5 rounded-2xl border border-[#262626] hover:bg-[#111]">View source</a>
+            <button onclick="copyCommand('cd apps/voice-lab && npm install && npm run dev')" 
+                    class="flex-1 text-sm py-2.5 rounded-2xl bg-[#f97316] text-black font-medium">Copy run command</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Voice Imagine -->
+      <div class="grok-card rounded-3xl p-6 flex flex-col">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">🖼️</div>
+              <div>
+                <div class="font-semibold text-2xl tracking-tight">voice-imagine</div>
+                <div class="text-[#f97316] text-sm">Voice-directed creation</div>
+              </div>
+            </div>
+          </div>
+          <a href="https://github.com/cobusgreyling/grok-lab/tree/main/apps/voice-imagine" target="_blank" 
+             class="text-xs px-3 py-1 rounded-full border border-[#262626] hover:bg-[#111] flex items-center gap-1">
+            <i class="fa-brands fa-github"></i>
+            <span>source</span>
+          </a>
+        </div>
+
+        <div class="text-sm text-[#a1a1aa] mb-4 leading-relaxed">
+          Demonstrate natural voice-driven creative loops for image generation and live iterative refinement.
+        </div>
+
+        <div class="app-screenshot mb-5">
+          <img src="./images/screenshots/voice-imagine.png" alt="voice-imagine app screenshot" class="w-full">
+        </div>
+
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-[#111] border border-[#262626]">Iterative prompting</span>
+          <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-[#111] border border-[#262626]">Voice refine</span>
+          <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-[#111] border border-[#262626]">Imagine API</span>
+        </div>
+
+        <div class="mt-auto">
+          <div class="terminal text-xs p-3 rounded-2xl text-[#a1a1aa] mb-3">
+            cd apps/voice-imagine<br>
+            npm install<br>
+            npm run dev
+          </div>
+          <div class="flex gap-2">
+            <a href="https://github.com/cobusgreyling/grok-lab/tree/main/apps/voice-imagine" target="_blank"
+               class="flex-1 text-center text-sm py-2.5 rounded-2xl border border-[#262626] hover:bg-[#111]">View source</a>
+            <button onclick="copyCommand('cd apps/voice-imagine && npm install && npm run dev')" 
+                    class="flex-1 text-sm py-2.5 rounded-2xl bg-[#f97316] text-black font-medium">Copy run command</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grok Threads -->
+      <div class="grok-card rounded-3xl p-6 flex flex-col">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">🧵</div>
+              <div>
+                <div class="font-semibold text-2xl tracking-tight">grok-threads</div>
+                <div class="text-[#f97316] text-sm">Threads that spread</div>
+              </div>
+            </div>
+          </div>
+          <a href="https://github.com/cobusgreyling/grok-lab/tree/main/apps/grok-threads" target="_blank" 
+             class="text-xs px-3 py-1 rounded-full border border-[#262626] hover:bg-[#111] flex items-center gap-1">
+            <i class="fa-brands fa-github"></i>
+            <span>source</span>
+          </a>
+        </div>
+
+        <div class="text-sm text-[#a1a1aa] mb-4 leading-relaxed">
+          Produce ready-to-post, high-engagement X threads with multiple angles and pixel-perfect live preview.
+        </div>
+
+        <div class="app-screenshot mb-5">
+          <img src="./images/screenshots/grok-threads.png" alt="grok-threads app screenshot" class="w-full">
+        </div>
+
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-[#111] border border-[#262626]">Variant generator</span>
+          <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-[#111] border border-[#262626]">X preview</span>
+          <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-[#111] border border-[#262626]">grok-4.3</span>
+        </div>
+
+        <div class="mt-auto">
+          <div class="terminal text-xs p-3 rounded-2xl text-[#a1a1aa] mb-3">
+            cd apps/grok-threads<br>
+            npm install<br>
+            npm run dev
+          </div>
+          <div class="flex gap-2">
+            <a href="https://github.com/cobusgreyling/grok-lab/tree/main/apps/grok-threads" target="_blank"
+               class="flex-1 text-center text-sm py-2.5 rounded-2xl border border-[#262626] hover:bg-[#111]">View source</a>
+            <button onclick="copyCommand('cd apps/grok-threads && npm install && npm run dev')" 
+                    class="flex-1 text-sm py-2.5 rounded-2xl bg-[#f97316] text-black font-medium">Copy run command</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick start -->
+  <div id="quickstart" class="max-w-6xl mx-auto px-6 pb-16">
+    <div class="rounded-3xl border border-[#262626] bg-[#171717] p-8">
+      <div class="mb-5">
+        <div class="section-header text-[#f97316]">Quick start (any app)</div>
+        <h3 class="text-2xl font-semibold tracking-tight">Get running in under 60 seconds</h3>
+      </div>
+      
+      <div class="grid md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
+        <div>
+          <div class="text-[#a1a1aa] mb-1.5">1. Get an xAI API key (free tier available)</div>
+          <a href="https://console.x.ai" target="_blank" class="text-[#f97316] hover:underline inline-flex items-center gap-1">
+            https://console.x.ai <i class="fa-solid fa-external-link-alt text-xs"></i>
+          </a>
+        </div>
+        <div>
+          <div class="text-[#a1a1aa] mb-1.5">2. Run any experiment</div>
+          <pre class="terminal p-3 rounded-2xl text-xs overflow-auto">cd grok-lab/apps/roast-voice
+npm install
+npm run dev</pre>
+          <div class="text-[10px] text-[#52525b] mt-1">Open <span class="font-mono">http://localhost:3000</span>. Toggle real voice after pasting your key.</div>
+        </div>
+      </div>
+      
+      <div class="pt-5 mt-5 border-t border-[#262626] flex flex-col sm:flex-row gap-3 text-xs">
+        <div class="flex-1 text-[#a1a1aa]">
+          All four apps are fully independent. You can deploy any single one to Vercel in one click.
+        </div>
+        <a href="https://github.com/cobusgreyling/grok-lab" target="_blank" 
+           class="px-4 py-2 rounded-2xl border border-[#262626] hover:bg-[#111] text-center whitespace-nowrap">
+          Full instructions in README
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Architecture & next steps -->
+  <div class="max-w-6xl mx-auto px-6 pb-16">
+    <div class="grid md:grid-cols-5 gap-6">
+      <div class="md:col-span-3 grok-card rounded-3xl p-7">
+        <div class="section-header mb-3">Realtime voice &amp; architecture</div>
+        <p class="text-[#a1a1aa] text-sm leading-relaxed">
+          A full browser-based xAI Realtime WebSocket client (16kHz PCM, tool calling, multiple voices) is the highest-leverage next step.
+          See the detailed integration guide with LiveKit migration path included in the repo.
+        </p>
+        <a href="https://github.com/cobusgreyling/grok-lab/blob/main/docs/REALTIME-INTEGRATION.md" target="_blank"
+           class="mt-4 inline-flex items-center text-sm text-[#f97316] hover:underline">
+          Read REALTIME-INTEGRATION.md <i class="ml-1 fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+      <div class="md:col-span-2 grok-card rounded-3xl p-7">
+        <div class="section-header mb-2">Contributing</div>
+        <ul class="text-sm text-[#a1a1aa] space-y-1.5">
+          <li>• Improve clip export (real mixed audio)</li>
+          <li>• Add LiveKit / Pipecat production voice versions</li>
+          <li>• More personalities &amp; prompt packs</li>
+          <li>• Real X posting integration (opt-in)</li>
+        </ul>
+        <div class="mt-4">
+          <a href="https://github.com/cobusgreyling/grok-lab/blob/main/CONTRIBUTING.md" target="_blank"
+             class="text-xs px-4 py-1.5 rounded-2xl border border-[#262626]">Read CONTRIBUTING.md</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="border-t border-[#262626] py-10">
+    <div class="max-w-6xl mx-auto px-6 text-xs text-[#52525b] flex flex-col md:flex-row md:items-center gap-y-2 justify-between">
+      <div>
+        MIT License • Built with ❤️ for maximum truth-seeking AIs
+      </div>
+      <div class="flex items-center gap-x-4">
+        <a href="https://github.com/xai-org/xai-cookbook" target="_blank" class="hover:text-white">xAI Cookbook</a>
+        <a href="https://grok.livekit.io/" target="_blank" class="hover:text-white">LiveKit Grok Playground</a>
+        <a href="https://console.x.ai" target="_blank" class="hover:text-white">xAI Console</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Tailwind script config
+    function initTailwind() {
+      document.documentElement.style.setProperty('--accent', '#f97316');
+    }
+    
+    function copyCommand(cmd) {
+      navigator.clipboard.writeText(cmd).then(() => {
+        const origText = event.currentTarget ? event.currentTarget.innerText : '';
+        const btns = document.querySelectorAll('button');
+        // Simple toast
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#171717;border:1px solid #262626;color:#ededed;padding:8px 18px;border-radius:9999px;font-size:13px;box-shadow:0 10px 15px -3px rgb(0 0 0 / 0.3);z-index:99999';
+        toast.textContent = 'Command copied to clipboard';
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.transition = 'all 0.2s';
+          toast.style.opacity = '0';
+          setTimeout(() => toast.remove(), 200);
+        }, 1600);
+      }).catch(() => {
+        // Fallback
+        prompt('Copy this command:', cmd);
+      });
+    }
+
+    // Keyboard hint
+    document.addEventListener('keydown', function(e) {
+      if (e.key === '/' && document.activeElement.tagName === 'BODY') {
+        e.preventDefault();
+        const firstCard = document.querySelector('.grok-card');
+        if (firstCard) firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+
+    // Boot
+    window.onload = function() {
+      initTailwind();
+      // Easter egg: click header image to go to repo
+      const headerImg = document.querySelector('img[src*="grok-lab-header"]');
+      if (headerImg) {
+        headerImg.style.cursor = 'pointer';
+        headerImg.addEventListener('click', () => {
+          window.open('https://github.com/cobusgreyling/grok-lab', '_blank');
+        });
+      }
+    };
+
+    // Make sure external links have rel
+    document.querySelectorAll('a[target="_blank"]').forEach(a => {
+      if (!a.getAttribute('rel')) a.setAttribute('rel', 'noopener');
+    });
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mic, Download, RefreshCw, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,13 +14,19 @@ const REFINE_PROMPTS = [
 ];
 
 export default function VoiceImagine() {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('grok-lab-api-key') || '');
+  const [apiKey, setApiKey] = useState('');
   const [currentPrompt, setCurrentPrompt] = useState("A majestic dragon overlooking a neon city at night");
   const [images, setImages] = useState<Array<{ url: string; prompt: string }>>([
     { url: "https://picsum.photos/id/1015/800/600", prompt: "A majestic dragon overlooking a neon city at night" }
   ]);
   const [isRecording, setIsRecording] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Load API key from localStorage (safe for SSR)
+  useEffect(() => {
+    const savedKey = localStorage.getItem('grok-lab-api-key');
+    if (savedKey) setApiKey(savedKey);
+  }, []);
 
   const saveKey = (k: string) => {
     setApiKey(k);

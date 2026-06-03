@@ -1,5 +1,9 @@
 # grok-lab
 
+[![grok-lab](docs/images/grok-lab-header.png)](https://cobusgreyling.github.io/grok-lab/)
+
+**→ [View the interactive showcase on GitHub Pages](https://cobusgreyling.github.io/grok-lab/)** — enable GitHub Pages (Settings → Pages → Source: main branch + /docs folder) to publish.
+
 > 4 production-ready, viral-grade experiments built on xAI's Grok models and realtime voice API.
 
 **The goal**: Build things that showcase what makes Grok special (brutal honesty, real-time knowledge, wit, powerful tool use) in delightful, shareable ways — and make them easy for others to run, fork, and remix.
@@ -8,12 +12,14 @@ Each app is independently deployable (Vercel one-click friendly) and designed to
 
 ## The Four Experiments
 
-| # | App | Core Idea | Viral Hook | Stack |
-|---|-----|-----------|------------|-------|
-| 1 | **[roast-voice](./apps/roast-voice)** | Brutally honest voice roasts | "Grok just destroyed my startup idea out loud — here's the clip" | Next.js + Web Audio + xAI Realtime |
-| 2 | **[voice-lab](./apps/voice-lab)** | The clean reference Grok voice client | Best open-source way to talk to Grok with tools, X search, and personalities | Next.js + full realtime client |
-| 3 | **[voice-imagine](./apps/voice-imagine)** | Voice-directed image & video generation | "I talked to Grok and it kept editing the image live" | Next.js + Realtime + Imagine API |
-| 4 | **[grok-threads](./apps/grok-threads)** | Best-in-class X thread generator + previewer | People actually post the threads Grok writes here | Next.js + Chat Completions + thread UI |
+> **Current status (as of this commit):** All apps have polished, key-optional demos that run instantly. roast-voice and grok-threads call real grok-4.3 when you paste a key. Full low-latency realtime voice (WebSocket audio + tool calling in voice) is the big missing piece — the architecture + integration guide exist; a production-grade implementation (or LiveKit) is the natural next step.
+
+| # | App | Core Idea | Purpose | Stack |
+|---|-----|-----------|---------|-------|
+| 1 | **[roast-voice](./apps/roast-voice)** | Brutally honest voice roasts | Showcase Grok's signature no-filter honesty with voice roasts + effortless clip export for viral sharing | Next.js + Web Audio + xAI Realtime |
+| 2 | **[voice-lab](./apps/voice-lab)** | The clean reference Grok voice client | The canonical open-source reference implementation for voice + tools + personalities when talking to Grok | Next.js + full realtime client |
+| 3 | **[voice-imagine](./apps/voice-imagine)** | Voice-directed image & video generation | Demonstrate natural voice-driven creative loops for image generation and live iterative refinement | Next.js + Realtime + Imagine API |
+| 4 | **[grok-threads](./apps/grok-threads)** | Best-in-class X thread generator + previewer | Produce ready-to-post, high-engagement X threads with multiple angles and pixel-perfect live preview | Next.js + Chat Completions + thread UI |
 
 ## Why These?
 
@@ -38,7 +44,7 @@ Most apps work in **demo mode** (browser SpeechRecognition + speechSynthesis) wi
 
 ## Architecture Notes (Important for forks)
 
-- All voice apps include a **full client-side xAI Realtime WebSocket client** (see `lib/xai-realtime.ts` in each).
+- Voice apps are structured for a **client-side xAI Realtime WebSocket client** (see `docs/REALTIME-INTEGRATION.md`). A reference `lib/xai-realtime.ts` + audio pipeline is the highest-leverage missing implementation.
 - Audio: 16kHz PCM16 chunks via AudioContext + base64. Received deltas are queued and played with Web Audio.
 - **Demo mode** is always available and delightful (great for screenshots and quick testing).
 - For production / hiding keys / better barge-in: Put a thin proxy in `/api/realtime` or (recommended) use **LiveKit Agents + official xAI plugin**. The code is structured so swapping is straightforward.

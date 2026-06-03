@@ -1,34 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --bg: #0a0a0a;
+  --bg-elevated: #111111;
+  --bg-card: #171717;
+  --border: #262626;
+  --accent: #f97316; /* vibrant orange for Grok energy */
+  --accent-muted: #c2410f;
+  --text: #ededed;
+  --text-muted: #a1a1aa;
+  --success: #22c55e;
+  --danger: #ef4444;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   font-family: var(--font-geist-sans);
-  background: #0a0a0a;
-  color: #ededed;
 }
 
-/* Consistent grok-lab dark theme */
+/* Grok-lab dark theme */
 .grok-card {
-  background: #171717;
-  border: 1px solid #262626;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 16px;
 }
 
@@ -36,8 +38,12 @@ body {
   transition: all 0.1s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
+.mic-button:active {
+  transform: scale(0.96);
+}
+
 .mic-button.recording {
-  background: #ef4444;
+  background: var(--danger);
   box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.2);
   animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
@@ -47,11 +53,59 @@ body {
   50% { box-shadow: 0 0 0 16px rgba(239, 68, 68, 0.1); }
 }
 
+.waveform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 48px;
+}
+
 .waveform-bar {
   width: 5px;
-  background: #f97316;
+  background: var(--accent);
   border-radius: 999px;
   transition: height 60ms ease-out;
+}
+
+.grok-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.roast-bubble {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.transcript-user {
+  background: #1f2937;
+}
+
+.clip-button {
+  background: linear-gradient(90deg, var(--accent), #fb923c);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.clip-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+}
+
+.preset-pill {
+  transition: all 0.1s ease;
+}
+
+.preset-pill:hover {
+  border-color: var(--accent);
+  background: rgba(249, 115, 22, 0.08);
+}
+
+.preset-pill.active {
+  border-color: var(--accent);
+  background: rgba(249, 115, 22, 0.15);
+  color: white;
 }
 
 .personality-btn {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mic, MicOff, Settings, Download, ExternalLink, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -13,12 +13,18 @@ const PERSONALITIES = [
 ];
 
 export default function VoiceLab() {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('grok-lab-api-key') || '');
+  const [apiKey, setApiKey] = useState('');
   const [personality, setPersonality] = useState(PERSONALITIES[0]);
   const [isRecording, setIsRecording] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [toolsEnabled, setToolsEnabled] = useState({ web: true, x: true });
   const [waveform, setWaveform] = useState([10, 22, 15, 30, 12]);
+
+  // Load API key from localStorage (safe for SSR)
+  useEffect(() => {
+    const savedKey = localStorage.getItem('grok-lab-api-key');
+    if (savedKey) setApiKey(savedKey);
+  }, []);
 
   const saveKey = (k: string) => {
     setApiKey(k);
@@ -34,13 +40,34 @@ export default function VoiceLab() {
         const demoUtterance = "What's the real state of AI agents in 2026?";
         setMessages(prev => [...prev, { role: 'user', text: demoUtterance }]);
         
-        // Simulated Grok response with tool use
-        setTimeout(() => {
-          setMessages(prev => [...prev, { 
-            role: 'grok', 
-            text: "The honest answer: most 'agent frameworks' are still very brittle. The ones that work in production are usually narrow, heavily prompted, and have a human in the loop for anything important. Tool use is real though — especially realtime X search.",
-            tools: ['web_search', 'x_search']
-          }]);
+        // Real Grok reply if key, else strong demo
+        setTimeout(async () => {
+          let replyText = "The honest answer: most 'agent frameworks' are still very brittle. The ones that work in production are usually narrow, heavily prompted, and have a human in the loop for anything important. Tool use is real though — especially realtime X search.";
+          let toolsUsed: string[] | undefined = ['web_search', 'x_search'];
+
+          if (apiKey) {
+            try {
+              const res = await fetch('https://api.x.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                body: JSON.stringify({
+                  model: 'grok-4.3',
+                  messages: [
+                    { role: 'system', content: personality.prompt },
+                    { role: 'user', content: demoUtterance }
+                  ],
+                  temperature: 0.7,
+                }),
+              });
+              if (res.ok) {
+                const d = await res.json();
+                replyText = d.choices?.[0]?.message?.content?.trim() || replyText;
+                toolsUsed = undefined; // real tool use would come from response
+              }
+            } catch {}
+          }
+
+          setMessages(prev => [...prev, { role: 'grok', text: replyText, tools: toolsUsed }]);
         }, 900);
       }, 1200);
     }

@@ -1,30 +1,101 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Copy, RefreshCw, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 const TONES = ['Savage', 'Thoughtful', 'Contrarian', 'Optimistic', 'Meme-y', 'Thread that actually gets reposted'];
 
 export default function GrokThreads() {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('grok-lab-api-key') || '');
+  const [apiKey, setApiKey] = useState('');
   const [topic, setTopic] = useState("Why most AI agent startups will be dead by 2027");
   const [tone, setTone] = useState('Savage');
   const [variants, setVariants] = useState<any[]>([]);
   const [selected, setSelected] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Load API key from localStorage (safe for SSR)
+  useEffect(() => {
+    const savedKey = localStorage.getItem('grok-lab-api-key');
+    if (savedKey) setApiKey(savedKey);
+  }, []);
+
   const saveKey = (k: string) => {
     setApiKey(k);
     localStorage.setItem('grok-lab-api-key', k);
   };
 
-  // In a real app this would call /api or directly the xAI chat endpoint with a strong thread prompt
+  const THREAD_SYSTEM = `You are an expert X/Twitter thread writer who studies virality and Grok's voice.
+Write 3 distinct thread variants on the given topic.
+Each thread should be 4-7 tweets.
+Tone: ${tone}. Be maximally truthful, sharp, and quotable.
+Format your entire response as strict JSON only (no markdown fences):
+{
+  "variants": [
+    { "title": "Short punchy title for this angle", "tweets": ["tweet 1 text", "tweet 2 text", ...] },
+    ...
+  ]
+}
+Never mention being an AI. Make the threads feel native to X and worth posting.`;
+
+  // Real generation using xAI chat completions (falls back to demo)
   const generateThreads = async () => {
     setIsGenerating(true);
 
-    // Demo variants — replace with real grok-4.3 call for production
-    await new Promise(r => setTimeout(r, 650));
+    if (apiKey) {
+      try {
+        const res = await fetch('https://api.x.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'grok-4.3',
+            messages: [
+              { role: 'system', content: THREAD_SYSTEM },
+              { role: 'user', content: `Topic: ${topic}\nTone preference: ${tone}. Generate 3 strong variants.` }
+            ],
+            temperature: 0.8,
+            max_tokens: 1400,
+          }),
+        });
+
+        if (!res.ok) throw new Error(`API ${res.status}`);
+        const data = await res.json();
+        const content = data.choices?.[0]?.message?.content || '';
+
+        // Try to parse JSON from the response (Grok sometimes adds extra text)
+        let parsed: any = null;
+        try {
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+        } catch {}
+
+        if (parsed?.variants && Array.isArray(parsed.variants) && parsed.variants.length > 0) {
+          const cleaned = parsed.variants.slice(0, 3).map((v: any) => ({
+            title: v.title || 'Thread variant',
+            tweets: Array.isArray(v.tweets) ? v.tweets.filter(Boolean) : []
+          })).filter((v: any) => v.tweets.length > 0);
+
+          if (cleaned.length > 0) {
+            setVariants(cleaned);
+            setSelected(0);
+            setIsGenerating(false);
+            toast.success('Real Grok threads generated');
+            return;
+          }
+        }
+        // If parse failed, fall through to demo with a note
+        toast.error('Grok response parse failed — showing strong demo variants');
+      } catch (e) {
+        console.error(e);
+        toast.error('Real API failed — falling back to demo. Check key or network.');
+      }
+    }
+
+    // Demo fallback (high quality curated examples that match the spirit)
+    await new Promise(r => setTimeout(r, 420));
 
     const demoVariants = [
       {
@@ -60,7 +131,9 @@ export default function GrokThreads() {
     setVariants(demoVariants);
     setSelected(0);
     setIsGenerating(false);
-    toast.success('6 variants would be generated with real Grok. Here are 3 strong ones.');
+    if (!apiKey) {
+      toast.success('Demo variants (paste xAI key for real Grok generations)');
+    }
   };
 
   const current = variants[selected] || { title: '', tweets: [] };
