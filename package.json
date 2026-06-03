@@ -1,0 +1,14 @@
+{
+  "name": "grok-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "4 viral-grade experiments built on xAI Grok (voice roasts, reference client, voice+imagine, thread machine)",
+  "scripts": {
+    "dev:roast": "cd apps/roast-voice && npm run dev",
+    "dev:lab": "cd apps/voice-lab && npm run dev",
+    "dev:imagine": "cd apps/voice-imagine && npm run dev",
+    "dev:threads": "cd apps/grok-threads && npm run dev",
+    "install:all": "cd apps/roast-voice && npm i && cd ../voice-lab && npm i && cd ../voice-imagine && npm i && cd ../grok-threads && npm i"
+  },
+  "license": "MIT"
+}

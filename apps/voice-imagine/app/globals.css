@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  font-family: var(--font-geist-sans);
+  background: #0a0a0a;
+  color: #ededed;
+}
+
+.grok-card { background: #171717; border: 1px solid #262626; border-radius: 16px; }
+.image-frame { background: #111; border: 1px solid #262626; }
+.refine-pill { transition: all .1s ease; }
+.refine-pill:hover { border-color: #f97316; background: rgba(249,115,22,.1); }

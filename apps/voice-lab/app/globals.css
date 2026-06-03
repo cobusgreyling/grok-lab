@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  font-family: var(--font-geist-sans);
+  background: #0a0a0a;
+  color: #ededed;
+}
+
+/* Consistent grok-lab dark theme */
+.grok-card {
+  background: #171717;
+  border: 1px solid #262626;
+  border-radius: 16px;
+}
+
+.mic-button {
+  transition: all 0.1s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mic-button.recording {
+  background: #ef4444;
+  box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.2);
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.2); }
+  50% { box-shadow: 0 0 0 16px rgba(239, 68, 68, 0.1); }
+}
+
+.waveform-bar {
+  width: 5px;
+  background: #f97316;
+  border-radius: 999px;
+  transition: height 60ms ease-out;
+}
+
+.personality-btn {
+  transition: all 0.1s ease;
+}
+
+.personality-btn.active {
+  border-color: #f97316;
+  background: rgba(249, 115, 22, 0.12);
+}
