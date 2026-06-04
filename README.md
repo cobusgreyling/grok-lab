@@ -4,7 +4,6 @@
 
 
 
-**→ [View the interactive showcase →](https://cobusgreyling.github.io/grok-lab/)**
 
 (We also added `docs/.nojekyll` for compatibility.)
 
