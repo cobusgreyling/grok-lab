@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Mic, Download, RefreshCw, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Mic, Download, RefreshCw, Image as ImageIcon, MicOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 const REFINE_PROMPTS = [
@@ -22,6 +22,8 @@ export default function VoiceImagine() {
   const [isRecording, setIsRecording] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const recognitionRef = useRef<any>(null);
+
   // Load API key from localStorage (safe for SSR)
   useEffect(() => {
     const savedKey = localStorage.getItem('grok-lab-api-key');
@@ -35,32 +37,121 @@ export default function VoiceImagine() {
 
   const generateImage = async (prompt: string) => {
     setIsGenerating(true);
-    
-    // Demo: use picsum with seed for "different" images. 
-    // Real: call xAI Imagine API here (grok-imagine-image or your endpoint)
-    await new Promise(r => setTimeout(r, 850));
-    
-    const newImg = {
-      url: `https://picsum.photos/id/${Math.floor(Math.random()*50)}/800/600`,
-      prompt
-    };
+
+    let imageUrl: string | null = null;
+
+    if (apiKey) {
+      try {
+        // Try server proxy first (recommended for public deploys)
+        let res = await fetch('/api/image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: 'grok-imagine-image', prompt, n: 1 }),
+        });
+
+        let data: any = null;
+        if (res.ok) {
+          data = await res.json();
+          if (data.useClientKey) {
+            // No server key — direct call from browser with user key (same as before)
+            res = await fetch('https://api.x.ai/v1/images/generations', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+              body: JSON.stringify({ model: 'grok-imagine-image', prompt, n: 1 }),
+            });
+            if (!res.ok) {
+              const err = await res.text().catch(() => '');
+              throw new Error(`API ${res.status}: ${err}`);
+            }
+            data = await res.json();
+          }
+        }
+
+        if (data) {
+          imageUrl = data?.data?.[0]?.url || data?.url || data?.images?.[0]?.url || null;
+        }
+      } catch (err: any) {
+        console.error('Real image gen failed', err);
+        toast.error(`Real Imagine failed — using demo placeholder. ${err?.message || ''}`);
+      }
+    }
+
+    if (!imageUrl) {
+      // Demo fallback (no key or API failed)
+      await new Promise(r => setTimeout(r, 650));
+      imageUrl = `https://picsum.photos/id/${Math.floor(Math.random() * 50)}/800/600`;
+    }
+
+    const newImg = { url: imageUrl, prompt };
     setImages(prev => [newImg, ...prev].slice(0, 6));
     setCurrentPrompt(prompt);
     setIsGenerating(false);
-    toast.success('Image generated (demo picsum — wire real xAI Imagine in /api)');
+
+    const isReal = !!apiKey && imageUrl && !imageUrl.includes('picsum');
+    toast.success(isReal ? 'Image generated with Grok Imagine' : 'Image generated (demo placeholder)');
+  };
+
+  const stopVoiceRefine = () => {
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch {}
+      recognitionRef.current = null;
+    }
+    setIsRecording(false);
   };
 
   const handleVoiceRefine = () => {
-    setIsRecording(true);
-    toast.info('Listening for creative direction...');
-    
-    // Demo: pick a random refine after "listening"
-    setTimeout(() => {
-      setIsRecording(false);
+    if (isRecording) {
+      stopVoiceRefine();
+      return;
+    }
+
+    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognitionAPI) {
+      toast.error('Speech recognition not supported — use a quick refine pill or type a new prompt instead.');
+      // Fallback: pick one
       const refine = REFINE_PROMPTS[Math.floor(Math.random() * REFINE_PROMPTS.length)];
-      const newPrompt = `${currentPrompt}, ${refine}`;
-      generateImage(newPrompt);
-    }, 1600);
+      generateImage(`${currentPrompt}, ${refine}`);
+      return;
+    }
+
+    const recognition = new SpeechRecognitionAPI();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: any) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      if (transcript.trim()) {
+        const newPrompt = `${currentPrompt}, ${transcript.trim()}`;
+        generateImage(newPrompt);
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('STT error', event);
+      toast.error('Mic error — using a quick refine instead.');
+      const refine = REFINE_PROMPTS[Math.floor(Math.random() * REFINE_PROMPTS.length)];
+      generateImage(`${currentPrompt}, ${refine}`);
+      stopVoiceRefine();
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+      recognitionRef.current = null;
+    };
+
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+      setIsRecording(true);
+      toast.info('Listening for creative direction...');
+    } catch (e) {
+      toast.error('Could not start microphone');
+      setIsRecording(false);
+    }
   };
 
   const exportCreation = () => {
@@ -112,12 +203,12 @@ export default function VoiceImagine() {
         <div className="flex flex-col items-center mb-8">
           <button 
             onClick={handleVoiceRefine} 
-            disabled={isRecording || isGenerating}
+            disabled={isGenerating}
             className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl transition-all ${isRecording ? 'bg-red-600 animate-pulse' : 'bg-[#f97316] hover:bg-orange-400'}`}
           >
-            <Mic size={32} />
+            {isRecording ? <MicOff size={32} /> : <Mic size={32} />}
           </button>
-          <div className="mt-3 text-xs tracking-[1.5px] text-[#a1a1aa]">{isRecording ? 'SAY HOW TO CHANGE IT' : 'TAP TO REFINE WITH YOUR VOICE'}</div>
+          <div className="mt-3 text-xs tracking-[1.5px] text-[#a1a1aa]">{isRecording ? 'LISTENING — SPEAK YOUR REFINEMENT' : 'TAP MIC TO REFINE WITH YOUR VOICE (OR USE PILLS BELOW)'}</div>
         </div>
 
         {/* Quick refine pills */}
@@ -151,7 +242,7 @@ export default function VoiceImagine() {
         </div>
 
         <div className="mt-10 text-center text-xs text-[#52525b]">
-          Wire the real xAI image generation endpoint (grok-imagine-image) in a server route for production. Voice loop + iterative prompting is the killer feature here.
+          Paste an xAI key for real <span className="font-mono">grok-imagine-image</span> generations. Voice-driven iterative refinement + shareable outputs are the killer feature.
         </div>
       </div>
     </div>

@@ -77,6 +77,8 @@ export default function GrokRoast() {
   const waveformIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const [isRecordingClip, setIsRecordingClip] = useState(false);
+  const [recordedClipUrl, setRecordedClipUrl] = useState<string | null>(null);
 
   // Load API key from localStorage
   useEffect(() => {
@@ -85,6 +87,24 @@ export default function GrokRoast() {
     
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       synthRef.current = window.speechSynthesis;
+    }
+
+    // Client-side share viewer (nice standalone "page" feel via query param)
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const share = params.get('share');
+      if (share) {
+        try {
+          const d = JSON.parse(atob(share));
+          if (d.roast) {
+            setMessages([
+              { role: 'user', content: d.topic || 'Shared roast', timestamp: new Date() },
+              { role: 'grok', content: d.roast, timestamp: new Date() },
+            ]);
+            toast.success('Loaded shared roast from link');
+          }
+        } catch {}
+      }
     }
   }, []);
 
@@ -138,18 +158,54 @@ export default function GrokRoast() {
     synthRef.current.speak(utterance);
   };
 
-  // Generate roast — real xAI if key + enabled, else demo
+  // Record ambient (mic) + the TTS roast for a real shareable clip
+  const toggleClipRecording = async () => {
+    if (isRecordingClip) {
+      // stop
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+      }
+      setIsRecordingClip(false);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mr.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        setRecordedClipUrl(url);
+        stream.getTracks().forEach(t => t.stop());
+        toast.success('Clip recorded. Use Export to download the audio + transcript.');
+      };
+
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setIsRecordingClip(true);
+      toast.info('Recording ambient + Grok roast. Speak or play the roast now.');
+    } catch (e) {
+      toast.error('Could not start audio recording (permission?)');
+    }
+  };
+
+  // Generate roast — real xAI if key + enabled, else demo.
+  // Tries server /api/chat proxy first (hides key for public deploys). Falls back to direct if no server key.
   const generateRoast = async (userInput: string): Promise<string> => {
     const fullPrompt = `${selectedPreset.prompt}${userInput}`.trim();
 
     if (useRealVoice && apiKey) {
       try {
-        const res = await fetch('https://api.x.ai/v1/chat/completions', {
+        // Try proxy first
+        let res = await fetch('/api/chat', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'grok-4.3',
             messages: [
@@ -161,12 +217,35 @@ export default function GrokRoast() {
           }),
         });
 
-        if (!res.ok) throw new Error(`API error: ${res.status}`);
-        const data = await res.json();
-        return data.choices?.[0]?.message?.content?.trim() || "Grok is thinking... try again.";
+        let data: any = null;
+        if (res.ok) {
+          data = await res.json();
+          if (data.useClientKey) {
+            // Server says "no server key configured" — do direct browser call with user key
+            res = await fetch('https://api.x.ai/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+              body: JSON.stringify({
+                model: 'grok-4.3',
+                messages: [
+                  { role: 'system', content: GROK_ROAST_SYSTEM },
+                  { role: 'user', content: fullPrompt }
+                ],
+                temperature: 0.85,
+                max_tokens: 420,
+              }),
+            });
+            if (!res.ok) throw new Error(`API error: ${res.status}`);
+            data = await res.json();
+          }
+        }
+
+        if (data && !data.useClientKey) {
+          return data.choices?.[0]?.message?.content?.trim() || "Grok is thinking... try again.";
+        }
       } catch (err) {
         console.error(err);
-        toast.error('Real API call failed — falling back to demo roast. Check your key.');
+        toast.error('Real API call failed — falling back to demo roast. Check your key or server proxy.');
       }
     }
 
@@ -276,7 +355,7 @@ export default function GrokRoast() {
     }
   };
 
-  // Export the magic — transcript + suggested post + re-speak for audio feel
+  // Export the magic — transcript + suggested post + real recorded clip if available
   const exportClip = (userMsg: Message, grokMsg: Message) => {
     const topic = userMsg.content;
     const roast = grokMsg.content;
@@ -303,11 +382,26 @@ export default function GrokRoast() {
       toast.success('Transcript downloaded + viral tweet text copied');
     });
 
-    // 3. Re-speak the roast while offering to record ambient (demo of "clip")
-    if (synthRef.current) {
-      toast.info('Re-playing the roast for your clip... (record your screen or use a mic app for full audio)');
+    // 3. If we have a recorded ambient clip (mic + TTS), download it as the shareable audio
+    if (recordedClipUrl) {
+      const audioA = document.createElement('a');
+      audioA.href = recordedClipUrl;
+      audioA.download = `grok-roast-clip-${Date.now()}.webm`;
+      audioA.click();
+      toast.success('Real audio clip (your mic + Grok) downloaded!');
+    } else if (synthRef.current) {
+      toast.info('Re-playing the roast. Use the "Record ambient clip" button before export for a real mixed audio file.');
       speak(roast);
     }
+
+    // 4. Shareable viewer link (client-side, encodes content — open the URL in a new tab for a clean "share page")
+    try {
+      const sharePayload = btoa(JSON.stringify({ preset: selectedPreset.label, topic, roast }));
+      const shareUrl = `${window.location.origin}${window.location.pathname}?share=${sharePayload}`;
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        toast('Shareable viewer link copied (open it for a clean standalone roast view)');
+      });
+    } catch {}
   };
 
   const clearSession = () => {
@@ -470,11 +564,19 @@ export default function GrokRoast() {
         <div className="space-y-4 mb-8">
           <div className="flex items-center justify-between px-1">
             <div className="uppercase text-xs tracking-[1.5px] text-[#a1a1aa]">THE ROAST</div>
-            {messages.length > 0 && (
-              <button onClick={clearSession} className="flex items-center gap-1.5 text-xs text-[#a1a1aa] hover:text-white">
-                <RefreshCw size={14} /> CLEAR SESSION
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={toggleClipRecording} 
+                className={`text-xs px-3 py-1 rounded-full border flex items-center gap-1 ${isRecordingClip ? 'border-red-500 text-red-400' : 'border-[#262626] hover:bg-[#222]'}`}
+              >
+                {isRecordingClip ? '■ STOP RECORDING CLIP' : '⏺ RECORD AMBIENT CLIP (mic + TTS)'}
               </button>
-            )}
+              {messages.length > 0 && (
+                <button onClick={clearSession} className="flex items-center gap-1.5 text-xs text-[#a1a1aa] hover:text-white">
+                  <RefreshCw size={14} /> CLEAR
+                </button>
+              )}
+            </div>
           </div>
 
           {messages.length === 0 && (

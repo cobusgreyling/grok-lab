@@ -2,13 +2,17 @@
 
 Shared code for the grok-lab experiments.
 
-Currently each app is intentionally self-contained (easier to fork just one).
+Currently each app is intentionally self-contained (easier to fork just one). `xai-client` has started to collect audio + realtime primitives.
 
-When patterns stabilize (especially the realtime audio client and common UI components), we will extract them here.
+When patterns stabilize, we extract here.
 
-## Planned
+## Current
 
-- `xai-client` — TypeScript helpers for chat + realtime voice (connection, audio utils, event types)
+- `xai-client` — audio utils + realtime client stub + types (see its README)
+
+## Planned / desired
+
+- More from `xai-client`: full WS client implementation (or LiveKit wrapper)
 - `ui` — waveform, mic button, transcript, Grok-themed components, clip exporter
 
-Contributions that factor common logic out are very welcome.
+Contributions that factor common logic out (while keeping apps fork-friendly) are very welcome.

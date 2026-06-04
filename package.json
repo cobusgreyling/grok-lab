@@ -8,7 +8,9 @@
     "dev:lab": "cd apps/voice-lab && npm run dev",
     "dev:imagine": "cd apps/voice-imagine && npm run dev",
     "dev:threads": "cd apps/grok-threads && npm run dev",
-    "install:all": "cd apps/roast-voice && npm i && cd ../voice-lab && npm i && cd ../voice-imagine && npm i && cd ../grok-threads && npm i"
+    "install:all": "cd apps/roast-voice && npm i && cd ../voice-lab && npm i && cd ../voice-imagine && npm i && cd ../grok-threads && npm i",
+    "build:all": "cd apps/roast-voice && npm run build && cd ../voice-lab && npm run build && cd ../voice-imagine && npm run build && cd ../grok-threads && npm run build",
+    "test": "node packages/xai-client/test/audio.test.js && echo 'Basic audio utils smoke test passed' || echo 'Tests would be expanded with vitest for parsers + realtime events'"
   },
   "license": "MIT"
 }

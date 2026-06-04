@@ -20,23 +20,41 @@ export default function GrokThreads() {
     if (savedKey) setApiKey(savedKey);
   }, []);
 
+  // Client-side share viewer for threads (standalone "page" experience)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get('thread');
+    if (t) {
+      try {
+        const d = JSON.parse(atob(t));
+        if (d.tweets && d.title) {
+          setVariants([{ title: d.title, tweets: d.tweets }]);
+          setSelected(0);
+          toast.success('Loaded shared thread from link');
+        }
+      } catch {}
+    }
+  }, []);
+
   const saveKey = (k: string) => {
     setApiKey(k);
     localStorage.setItem('grok-lab-api-key', k);
   };
 
   const THREAD_SYSTEM = `You are an expert X/Twitter thread writer who studies virality and Grok's voice.
-Write 3 distinct thread variants on the given topic.
-Each thread should be 4-7 tweets.
-Tone: ${tone}. Be maximally truthful, sharp, and quotable.
-Format your entire response as strict JSON only (no markdown fences):
+Write exactly 3 distinct thread variants on the given topic.
+Each thread 4-7 tweets long.
+Tone: ${tone}. Be maximally truthful, sharp, quotable, and native to X.
+Respond with STRICT JSON ONLY — no markdown, no explanations, no backticks.
+Exactly this shape:
 {
   "variants": [
-    { "title": "Short punchy title for this angle", "tweets": ["tweet 1 text", "tweet 2 text", ...] },
-    ...
+    { "title": "Short punchy title for this angle", "tweets": ["tweet 1 text here", "tweet 2 text here", "..."] },
+    { "title": "...", "tweets": ["..."] },
+    { "title": "...", "tweets": ["..."] }
   ]
-}
-Never mention being an AI. Make the threads feel native to X and worth posting.`;
+}`;
 
   // Real generation using xAI chat completions (falls back to demo)
   const generateThreads = async () => {
@@ -44,12 +62,10 @@ Never mention being an AI. Make the threads feel native to X and worth posting.`
 
     if (apiKey) {
       try {
-        const res = await fetch('https://api.x.ai/v1/chat/completions', {
+        // Try server proxy first (hides key). Falls back to direct if proxy signals useClientKey.
+        let res = await fetch('/api/chat', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'grok-4.3',
             messages: [
@@ -61,16 +77,41 @@ Never mention being an AI. Make the threads feel native to X and worth posting.`
           }),
         });
 
-        if (!res.ok) throw new Error(`API ${res.status}`);
-        const data = await res.json();
+        let data: any = null;
+        if (res.ok) {
+          data = await res.json();
+          if (data.useClientKey) {
+            res = await fetch('https://api.x.ai/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+              body: JSON.stringify({
+                model: 'grok-4.3',
+                messages: [
+                  { role: 'system', content: THREAD_SYSTEM },
+                  { role: 'user', content: `Topic: ${topic}\nTone preference: ${tone}. Generate 3 strong variants.` }
+                ],
+                temperature: 0.8,
+                max_tokens: 1400,
+              }),
+            });
+            if (!res.ok) throw new Error(`API ${res.status}`);
+            data = await res.json();
+          }
+        }
+
+        if (!data) throw new Error('no data');
         const content = data.choices?.[0]?.message?.content || '';
 
-        // Try to parse JSON from the response (Grok sometimes adds extra text)
+        // Robust JSON extraction (multiple strategies)
         let parsed: any = null;
-        try {
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
-        } catch {}
+        const strategies = [
+          () => JSON.parse(content),
+          () => { const m = content.match(/\{[\s\S]*\}/); return m ? JSON.parse(m[0]) : null; },
+          () => { const m = content.match(/```json\s*([\s\S]*?)```/i); return m ? JSON.parse(m[1]) : null; },
+        ];
+        for (const s of strategies) {
+          try { const p = s(); if (p?.variants) { parsed = p; break; } } catch {}
+        }
 
         if (parsed?.variants && Array.isArray(parsed.variants) && parsed.variants.length > 0) {
           const cleaned = parsed.variants.slice(0, 3).map((v: any) => ({
@@ -235,7 +276,28 @@ Never mention being an AI. Make the threads feel native to X and worth posting.`
                 <div className="flex gap-3 mt-5">
                   <button onClick={copyThread} className="flex-1 py-3 rounded-2xl bg-white text-black font-medium flex items-center justify-center gap-2"><Copy size={16} /> COPY FULL THREAD</button>
                   <button onClick={copyAsQuote} className="flex-1 py-3 rounded-2xl border border-[#262626] flex items-center justify-center gap-2">COPY AS QUOTE TWEET</button>
+                  <button 
+                    onClick={() => {
+                      const text = current.tweets.map((t: string, i: number) => `${i + 1}/${current.tweets.length} ${t}`).join('\n\n');
+                      const url = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`;
+                      window.open(url, '_blank');
+                    }}
+                    className="flex-1 py-3 rounded-2xl border border-[#f97316] text-[#f97316] flex items-center justify-center gap-2"
+                  >
+                    POST TO X
+                  </button>
                 </div>
+                <button
+                  onClick={() => {
+                    const payload = btoa(JSON.stringify({ title: current.title, tweets: current.tweets }));
+                    const url = `${window.location.origin}${window.location.pathname}?thread=${payload}`;
+                    navigator.clipboard.writeText(url).then(() => toast('Shareable thread viewer link copied'));
+                  }}
+                  className="mt-2 text-xs w-full py-2 rounded-2xl border border-[#262626] hover:bg-[#111]"
+                >
+                  COPY SHAREABLE VIEWER LINK (open for clean standalone thread)
+                </button>
+                <div className="text-[10px] text-center text-[#52525b] mt-1">Intent link opens X compose (no auth needed). Full posting requires X OAuth (out of scope for this demo).</div>
               </div>
               <div className="text-[10px] text-center text-[#52525b] mt-3">Looks exactly like X. Copy-paste directly into compose. People will actually post these.</div>
             </div>

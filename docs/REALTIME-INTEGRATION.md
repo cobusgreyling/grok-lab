@@ -124,3 +124,34 @@ Current relevant models (check console.x.ai for latest):
 - Pipecat xAI transport
 
 If you improve the client code significantly, open a PR — these patterns are intentionally shared across the lab.
+
+## Production Path: LiveKit + Pipecat (Recommended)
+
+The browser WS client in `packages/xai-client` and the apps is great for quick viral demos and client-only deploys.
+
+For anything serious (barge-in, phone numbers via SIP, multi-user rooms, reliable VAD, scaling), move the agent to a server using **LiveKit Agents** (Python, Node support coming) with the official xAI plugin.
+
+Quick start (from the LiveKit xAI announcement):
+
+```bash
+lk agent create
+# then in your agent:
+from livekit.agents import AgentSession
+import livekit.plugins.xai as xai
+
+session = AgentSession(llm=xai.realtime.RealtimeModel())
+await session.start(room=ctx.room, agent=GrokAssistant())
+```
+
+Benefits:
+- Server-side VAD + interruption handling (no overlap during tool calls)
+- SIP phone numbers out of the box
+- Runs the exact same Grok voice model
+- Easy to add tools, RAG (collections), MCP etc.
+
+See the official LiveKit blog post and https://grok.livekit.io/ playground for the golden path.
+
+The grok-lab browser client + the LiveKit path are designed to be complementary — prototype fast in the browser, graduate to LiveKit for real products.
+
+Update your CONTRIBUTING ideas or showcase when you ship a LiveKit version of one of the apps!
+
