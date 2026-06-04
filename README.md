@@ -8,11 +8,19 @@
 
 ### 🚀 Showcase (GitHub Pages)
 
-(We also added `docs/.nojekyll` for compatibility.)
+A beautiful, self-contained landing page lives in `docs/index.html` (with screenshots, run commands, and status).
 
-> 4 production-ready, viral-grade experiments built on xAI's Grok models and realtime voice API.
+**Live showcase**: https://cobusgreyling.github.io/grok-lab/
 
-**Live showcase**: https://cobusgreyling.github.io/grok-lab/ (served from `/docs` via GitHub Pages — enable in repo Settings if it 404s).
+#### How to enable (one-time)
+1. Push this repo (or the latest commit).
+2. Go to **Settings → Pages**.
+3. Under "Build and deployment", set **Source** to **GitHub Actions**.
+4. Save. The included workflow (`.github/workflows/deploy-pages.yml`) will automatically deploy `docs/` on every push to `main`.
+
+It usually takes 1–2 minutes for the site to become live after enabling. The badge above will turn green when it's ready.
+
+(We also added `docs/.nojekyll` to prevent Jekyll processing.)
 
 **The goal**: Build things that showcase what makes Grok special (brutal honesty, real-time knowledge, wit, powerful tool use) in delightful, shareable ways — and make them easy for others to run, fork, and remix.
 
