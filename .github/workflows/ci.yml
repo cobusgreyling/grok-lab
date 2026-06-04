@@ -28,7 +28,7 @@ jobs:
       - name: Lint ${{ matrix.app }}
         run: |
           cd apps/${{ matrix.app }}
-          npm run lint --if-present || true
+          npm run lint --if-present
   root-scripts:
     runs-on: ubuntu-latest
     steps:

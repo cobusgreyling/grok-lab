@@ -4,13 +4,18 @@
   "private": true,
   "description": "4 viral-grade experiments built on xAI Grok (voice roasts, reference client, voice+imagine, thread machine)",
   "scripts": {
+    "dev": "echo 'Run one app at a time (or in separate terminals / different ports):' && echo '  npm run dev:roast | dev:lab | dev:imagine | dev:threads  (or npm run dev:all)'",
     "dev:roast": "cd apps/roast-voice && npm run dev",
     "dev:lab": "cd apps/voice-lab && npm run dev",
     "dev:imagine": "cd apps/voice-imagine && npm run dev",
     "dev:threads": "cd apps/grok-threads && npm run dev",
-    "install:all": "cd apps/roast-voice && npm i && cd ../voice-lab && npm i && cd ../voice-imagine && npm i && cd ../grok-threads && npm i",
-    "build:all": "cd apps/roast-voice && npm run build && cd ../voice-lab && npm run build && cd ../voice-imagine && npm run build && cd ../grok-threads && npm run build",
+    "dev:all": "concurrently -k -n roast,lab,imagine,threads -c cyan,magenta,yellow,green \"npm:dev:roast -- --port 3000\" \"npm:dev:lab -- --port 3001\" \"npm:dev:imagine -- --port 3002\" \"npm:dev:threads -- --port 3003\"",
+    "install:all": "npm --prefix apps/roast-voice install && npm --prefix apps/voice-lab install && npm --prefix apps/voice-imagine install && npm --prefix apps/grok-threads install",
+    "build:all": "npm --prefix apps/roast-voice run build && npm --prefix apps/voice-lab run build && npm --prefix apps/voice-imagine run build && npm --prefix apps/grok-threads run build",
     "test": "node packages/xai-client/test/audio.test.js && echo 'Basic audio utils smoke test passed' || echo 'Tests would be expanded with vitest for parsers + realtime events'"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "10.0.3"
+  }
 }

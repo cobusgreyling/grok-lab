@@ -15,4 +15,6 @@ import Waveform from '@grok-lab/ui/Waveform';
 
 These are intentionally small and dependency-free (except lucide-react which most apps already have).
 
-See the voice-lab for an example of wiring.
+See the voice-lab (has local copies in components/) and roast-voice (now wired) for examples of wiring.
+
+To keep "one folder" forks working, we copy the component sources into each consuming app's components/ or lib/.

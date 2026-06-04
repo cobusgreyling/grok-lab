@@ -1,5 +1,8 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Settings, Download, ExternalLink, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';

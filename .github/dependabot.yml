@@ -1,10 +1,7 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
+  # Root has a package.json for convenience scripts only (no lockfile/deps).
+  # Dependabot updates are handled per-app so each standalone demo stays current.
   - package-ecosystem: "npm"
     directory: "/apps/roast-voice"
     schedule:

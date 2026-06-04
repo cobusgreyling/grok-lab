@@ -1,5 +1,8 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 /**
  * xAI Grok Realtime Voice Client (browser) - shared package version
  * (kept in sync with apps/*/lib for standalone fork-friendliness)

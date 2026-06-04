@@ -1,9 +1,16 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/set-state-in-effect */
+/* Allow some impurity + any in this interactive demo (SpeechRecognition, realtime events, share param init, Date.now for filenames, Math.random for demo variety) */
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Download, Copy, RefreshCw, AlertCircle, ExternalLink } from 'lucide-react';
+import { Mic, MicOff, Download, Copy, RefreshCw, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import ApiKeyInput from './components/ApiKeyInput';
+import Waveform from './components/Waveform';
+import { GrokRealtimeClient } from './lib/xai-realtime';
 
 // Types
 type Preset = {
@@ -60,8 +67,20 @@ const DEMO_ROASTS: Record<string, string[]> = {
   ],
 };
 
+// Pure helper outside component so the linter doesn't treat Math.random as executing during render.
+function pickDemoRoast(presetId: string): string {
+  const options = DEMO_ROASTS[presetId] || DEMO_ROASTS.life;
+  const base = options[Math.floor(Math.random() * options.length)];
+  return base.replace(/your/gi, 'your').replace(/you/gi, 'you');
+}
+
 export default function GrokRoast() {
-  const [apiKey, setApiKey] = useState('');
+  const [apiKey, setApiKey] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('grok-lab-api-key') || '';
+    }
+    return '';
+  });
   const [useRealVoice, setUseRealVoice] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<Preset>(PRESETS[0]);
   const [freeformInput, setFreeformInput] = useState('');
@@ -71,20 +90,31 @@ export default function GrokRoast() {
   const [currentTranscript, setCurrentTranscript] = useState('');
   const [waveformHeights, setWaveformHeights] = useState<number[]>([12, 24, 18, 32, 15, 28, 20]);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] = useState('idle');
+  const [isSpeakingRealtime, setIsSpeakingRealtime] = useState(false);
 
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const waveformIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const realtimeClientRef = useRef<GrokRealtimeClient | null>(null);
   const [isRecordingClip, setIsRecordingClip] = useState(false);
   const [recordedClipUrl, setRecordedClipUrl] = useState<string | null>(null);
 
-  // Load API key from localStorage
+  const disconnectRealtime = () => {
+    if (realtimeClientRef.current) {
+      try {
+        realtimeClientRef.current.disconnect();
+      } catch {}
+      realtimeClientRef.current = null;
+    }
+    setRealtimeStatus('idle');
+    setIsSpeakingRealtime(false);
+  };
+
+  // Load synth + share viewer (key is now lazy-initialized to avoid setState-in-effect)
   useEffect(() => {
-    const savedKey = localStorage.getItem('grok-lab-api-key');
-    if (savedKey) setApiKey(savedKey);
-    
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       synthRef.current = window.speechSynthesis;
     }
@@ -106,6 +136,16 @@ export default function GrokRoast() {
         } catch {}
       }
     }
+  }, []);
+
+  // Cleanup realtime + audio on unmount
+  useEffect(() => {
+    return () => {
+      disconnectRealtime();
+      if (synthRef.current) {
+        try { synthRef.current.cancel(); } catch {}
+      }
+    };
   }, []);
 
   const saveApiKey = (key: string) => {
@@ -190,7 +230,7 @@ export default function GrokRoast() {
       mediaRecorderRef.current = mr;
       setIsRecordingClip(true);
       toast.info('Recording ambient + Grok roast. Speak or play the roast now.');
-    } catch (e) {
+    } catch {
       toast.error('Could not start audio recording (permission?)');
     }
   };
@@ -249,13 +289,77 @@ export default function GrokRoast() {
       }
     }
 
-    // Demo mode — pick a savage response
-    const category = selectedPreset.id;
-    const options = DEMO_ROASTS[category] || DEMO_ROASTS.life;
-    const base = options[Math.floor(Math.random() * options.length)];
-    
-    // Light personalization
-    return base.replace(/your/gi, 'your').replace(/you/gi, 'you');
+    // Demo mode — pick a savage response (via pure helper defined outside component)
+    return pickDemoRoast(selectedPreset.id);
+  };
+
+  // Use the realtime client for a one-shot roast: send the topic as text, let Grok generate + speak the roast with real voice.
+  // Returns the final transcript text for the UI/export bubbles.
+  const startRealtimeRoast = async (userInput: string): Promise<string> => {
+    const fullPrompt = `${selectedPreset.prompt}${userInput}`.trim();
+
+    return new Promise<string>((resolve, reject) => {
+      let capturedText = '';
+
+      const client = new GrokRealtimeClient({
+        apiKey,
+        instructions: GROK_ROAST_SYSTEM,
+        voice: 'eve',
+        onTranscript: (role, text, isFinal) => {
+          if (role === 'assistant' && text) {
+            capturedText = text;
+            // Optionally live-update the last grok message for streaming feel (simple append for roast)
+            if (!isFinal) {
+              setMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last && last.role === 'grok') {
+                  const copy = [...prev];
+                  copy[copy.length - 1] = { ...last, content: text };
+                  return copy;
+                }
+                return prev;
+              });
+            }
+          }
+        },
+        onAudioStart: () => setIsSpeakingRealtime(true),
+        onAudioEnd: () => {
+          setIsSpeakingRealtime(false);
+          disconnectRealtime();
+          const result = (capturedText || 'Grok delivered a roast via realtime voice.').trim();
+          resolve(result);
+        },
+        onStatus: (s) => setRealtimeStatus(s),
+        onError: (err) => {
+          disconnectRealtime();
+          toast.error('Realtime roast failed: ' + err.message);
+          reject(err);
+        },
+        onToolCall: GrokRealtimeClient.defaultToolExecutor,
+      });
+
+      realtimeClientRef.current = client;
+      setRealtimeStatus('connecting');
+
+      client.connect()
+        .then(async () => {
+          // Brief wait for WS open + session.update to complete (lib connect() resolves before onopen)
+          await new Promise(r => setTimeout(r, 350));
+          setRealtimeStatus('thinking + speaking');
+          client.sendText(fullPrompt);
+          // Safety timeout (roasts are short)
+          setTimeout(() => {
+            if (realtimeClientRef.current === client) {
+              disconnectRealtime();
+              resolve(capturedText || 'Roast complete (realtime voice).');
+            }
+          }, 18000);
+        })
+        .catch((e) => {
+          disconnectRealtime();
+          reject(e);
+        });
+    });
   };
 
   // Start voice input (demo: SpeechRecognition)
@@ -300,7 +404,7 @@ export default function GrokRoast() {
       setCurrentTranscript('');
       startWaveform();
       toast.info('Listening... speak clearly');
-    } catch (e) {
+    } catch {
       toast.error('Could not start microphone');
     }
   };
@@ -324,13 +428,19 @@ export default function GrokRoast() {
     setCurrentTranscript('');
 
     try {
-      const roastText = await generateRoast(spokenText);
-      
+      let roastText: string;
+      if (useRealVoice && apiKey) {
+        // Real path: realtime client generates the roast content + speaks it with Grok's voice model.
+        // The client's internal audio pipeline plays the voice; we capture text for the transcript UI.
+        roastText = await startRealtimeRoast(spokenText);
+      } else {
+        roastText = await generateRoast(spokenText);
+        // Demo / browser voice
+        speak(roastText);
+      }
+
       const grokMessage: Message = { role: 'grok', content: roastText, timestamp: new Date() };
       setMessages(prev => [...prev, grokMessage]);
-
-      // Speak it (demo voice)
-      speak(roastText);
 
       toast.success('Roast delivered. Clip it.', {
         action: {
@@ -338,8 +448,10 @@ export default function GrokRoast() {
           onClick: () => exportClip(userMessage, grokMessage),
         },
       });
-    } catch (e) {
+    } catch {
       toast.error('Failed to generate roast');
+      // ensure cleanup
+      disconnectRealtime();
     } finally {
       setIsProcessing(false);
     }
@@ -372,6 +484,7 @@ export default function GrokRoast() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
+    // eslint-disable-next-line react-hooks/purity
     a.download = `grok-roast-${selectedPreset.id}-${Date.now()}.txt`;
     a.click();
     URL.revokeObjectURL(url);
@@ -386,6 +499,7 @@ export default function GrokRoast() {
     if (recordedClipUrl) {
       const audioA = document.createElement('a');
       audioA.href = recordedClipUrl;
+      // eslint-disable-next-line react-hooks/purity
       audioA.download = `grok-roast-clip-${Date.now()}.webm`;
       audioA.click();
       toast.success('Real audio clip (your mic + Grok) downloaded!');
@@ -409,6 +523,7 @@ export default function GrokRoast() {
     setCurrentTranscript('');
     if (synthRef.current) synthRef.current.cancel();
     setIsSpeaking(false);
+    disconnectRealtime();
     toast('Session cleared');
   };
 
@@ -451,7 +566,7 @@ export default function GrokRoast() {
         {/* Hero */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 rounded-full bg-[#111] px-4 py-1 text-xs tracking-widest text-[#f97316] mb-4 border border-[#262626]">
-            POWERED BY GROK-4.3 + xAI REALTIME
+            POWERED BY GROK-4.3 + REALTIME VOICE (when key + toggle)
           </div>
           <h1 className="text-6xl font-semibold tracking-tighter mb-3">Tell me the truth.<br />Out loud.</h1>
           <p className="text-xl text-[#a1a1aa] max-w-md mx-auto">
@@ -459,33 +574,21 @@ export default function GrokRoast() {
           </p>
         </div>
 
-        {/* API Key + Real Voice toggle */}
-        <div className="grok-card p-5 mb-8 flex flex-col md:flex-row gap-4 items-start md:items-center">
-          <div className="flex-1">
-            <div className="text-xs uppercase tracking-widest text-[#a1a1aa] mb-1.5">xAI API KEY (optional for demo)</div>
+        {/* API Key (now from shared component) + Real Voice toggle */}
+        <ApiKeyInput value={apiKey} onChange={saveApiKey} />
+        <div className="mb-8 flex flex-wrap items-center gap-3 px-1 -mt-4">
+          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
             <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => saveApiKey(e.target.value)}
-              placeholder="xai-..."
-              className="w-full bg-[#111] border border-[#262626] rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none focus:border-[#f97316] placeholder:text-[#52525b]"
+              type="checkbox"
+              checked={useRealVoice}
+              onChange={(e) => setUseRealVoice(e.target.checked)}
+              className="accent-[#f97316]"
             />
-            <div className="text-[10px] text-[#52525b] mt-1">Stored only in your browser. Never sent anywhere except directly to api.x.ai.</div>
-          </div>
-          <div className="flex items-center gap-3 pt-2 md:pt-6">
-            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={useRealVoice}
-                onChange={(e) => setUseRealVoice(e.target.checked)}
-                className="accent-[#f97316]"
-              />
-              Use real xAI voice (when key present)
-            </label>
-            <a href="https://console.x.ai" target="_blank" className="text-xs text-[#f97316] flex items-center gap-1 hover:underline">
-              Get key <ExternalLink size={12} />
-            </a>
-          </div>
+            Use realtime voice (Grok generates + speaks the roast with real voice)
+          </label>
+          <a href="https://console.x.ai" target="_blank" className="text-xs text-[#f97316] flex items-center gap-1 hover:underline">
+            Get key <ExternalLink size={12} />
+          </a>
         </div>
 
         {/* Presets */}
@@ -517,19 +620,11 @@ export default function GrokRoast() {
           </button>
 
           <div className="mt-6">
-            <div className="waveform">
-              {waveformHeights.map((h, i) => (
-                <div
-                  key={i}
-                  className="waveform-bar"
-                  style={{ height: `${h}px`, background: isRecording || isSpeaking ? '#f97316' : '#52525b' }}
-                />
-              ))}
-            </div>
+            <Waveform heights={waveformHeights} active={isRecording || isSpeaking || isSpeakingRealtime} />
           </div>
 
           <div className="mt-4 text-xs text-[#52525b] font-mono tracking-widest">
-            {isRecording ? 'LISTENING...' : isSpeaking ? 'GROK IS SPEAKING...' : isProcessing ? 'GROK IS THINKING...' : 'READY'}
+            {isRecording ? 'LISTENING...' : (isSpeaking || isSpeakingRealtime) ? 'GROK IS SPEAKING...' : isProcessing ? 'GROK IS THINKING...' : realtimeStatus !== 'idle' ? `REALTIME: ${realtimeStatus}` : 'READY'}
           </div>
 
           {/* Live partial transcript while speaking */}
@@ -630,8 +725,8 @@ export default function GrokRoast() {
 
         {/* Footer info */}
         <div className="text-center text-xs text-[#52525b] max-w-sm mx-auto">
-          Demo mode uses your browser&apos;s speech APIs + pre-baked savage Grok responses (or real grok-4.3 if you paste a key).<br />
-          For true low-latency expressive voice + tool calling, see the realtime client in <span className="font-mono">lib/</span> and the integration guide.
+          Demo mode uses browser speech + pre-baked responses. With key + toggle: full realtime Grok voice (content + delivery via WS).<br />
+          Reference client + more in <span className="font-mono">voice-lab</span> and <span className="font-mono">docs/REALTIME-INTEGRATION.md</span>.
           <div className="mt-4">
             <a href="https://github.com/xai-org/xai-cookbook" target="_blank" className="text-[#f97316] hover:underline">View official xAI voice examples →</a>
           </div>

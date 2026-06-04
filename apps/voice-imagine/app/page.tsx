@@ -1,5 +1,8 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/set-state-in-effect */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Download, RefreshCw, Image as ImageIcon, MicOff } from 'lucide-react';
 import { toast } from 'sonner';

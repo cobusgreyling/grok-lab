@@ -11,10 +11,10 @@ npm install
 npm run dev
 ```
 
-Paste an xAI key (console.x.ai) for real grok-4.3 roasts + later realtime voice.
+Paste an xAI key (console.x.ai) and enable the realtime toggle for Grok to *generate and speak* the roast using the realtime voice model (low-latency, expressive).
 
-Demo mode works instantly with browser speech APIs.
+Demo mode works instantly with browser speech APIs (no key needed).
 
 See the root [grok-lab README](../../README.md) and the **[interactive showcase](https://cobusgreyling.github.io/grok-lab/)** (GitHub Pages) for the full story, screenshots, and the other experiments.
 
-Real `grok-4.3` roasts when key present (client-side). Export gives transcript + ready-to-post tweet text + replay. Demo mode (browser STT + TTS) works instantly.
+When the "realtime voice" toggle + key are used: the roast content + delivery both come from Grok's realtime voice API. Export still works (transcript + clip). The reference full-duplex client lives in `voice-lab`.

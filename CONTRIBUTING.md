@@ -31,13 +31,23 @@ We're biased toward things that:
 
 ## Code style
 
-- TypeScript strict
+- TypeScript strict (already enabled in the tsconfigs)
 - Prefer small, focused components
-- Keep system prompts in one place (`lib/prompts.ts`)
+- Keep system prompts in one place (usually `lib/prompts.ts` or at the top of the main page)
 - Comment the tricky audio/WS parts heavily
+
+## Monorepo & forking philosophy
+
+Each app must remain runnable/deployable after copying just its folder out of the repo. This means:
+
+- We tolerate some duplication (especially the realtime client and small UI bits).
+- When you improve something reusable, also update `packages/` (and optionally note a copy step for other apps).
+- See `packages/README.md` for the current extraction approach.
 
 ## Running locally
 
 See the root README.
 
-PRs that add a working "Export as viral clip" flow or a new personality that gets real laughs/truth will be merged very quickly.
+PRs that add a working "Export as viral clip" flow, a new personality that gets real laughs/truth, or that clean up the realtime client + actually wire better voice output into `roast-voice` will be merged very quickly.
+
+Also see root [SECURITY.md](../SECURITY.md) and [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md).
