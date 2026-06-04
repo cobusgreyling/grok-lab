@@ -2,20 +2,7 @@
 
 [![grok-lab](docs/images/grok-lab-header.png)](https://cobusgreyling.github.io/grok-lab/)
 
-### 🚀 Showcase (GitHub Pages)
 
-The beautiful interactive showcase is already built at `docs/index.html` (with header image + live previews of all four apps).
-
-**The link below will 404 until you enable GitHub Pages (takes 30 seconds):**
-
-1. Open **https://github.com/cobusgreyling/grok-lab/settings/pages** (or: Repo → **Settings** → **Pages** in the left sidebar)
-2. Under "Build and deployment" → **Source**, select:
-   - **Deploy from a branch**
-   - Branch: `main`
-   - Folder: `/docs`
-3. Click **Save**.
-
-GitHub will build and publish it. Refresh the link after ~1 minute:
 
 **→ [View the interactive showcase →](https://cobusgreyling.github.io/grok-lab/)**
 
