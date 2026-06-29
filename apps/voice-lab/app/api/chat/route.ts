@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
 
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'proxy error' }, { status: 500 });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'proxy error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
