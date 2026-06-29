@@ -14,8 +14,8 @@ jobs:
       matrix:
         app: [roast-voice, voice-lab, voice-imagine, grok-threads]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: 'npm'
@@ -32,8 +32,8 @@ jobs:
   root-scripts:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
       - run: npm install --ignore-scripts || true
@@ -42,7 +42,7 @@ jobs:
   docs-pages:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify GitHub Pages showcase (static HTML + .nojekyll)
         run: |
           test -f docs/index.html || exit 1
