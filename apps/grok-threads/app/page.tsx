@@ -221,7 +221,7 @@ Exactly this shape:
 
         <div className="flex gap-3 mb-5">
           <input value={apiKey} onChange={e=>saveKey(e.target.value)} type="password" placeholder="xai key for real generations" className="flex-1 bg-[#111] border border-[#262626] rounded-2xl px-5 py-3 font-mono text-sm" />
-          <button onClick={analyzeTrends} className="flex items-center gap-2 px-6 rounded-2xl border border-[#262626] hover:bg-[#1a1a1a] text-sm"><TrendingUp size={16} /> WHAT'S HOT RIGHT NOW</button>
+          <button onClick={analyzeTrends} className="flex items-center gap-2 px-6 rounded-2xl border border-[#262626] hover:bg-[#1a1a1a] text-sm"><TrendingUp size={16} /> WHAT&apos;S HOT RIGHT NOW</button>
           <button onClick={generateThreads} disabled={isGenerating || !topic} className="px-8 rounded-2xl bg-[#f97316] text-black font-medium disabled:opacity-60">GENERATE VARIANTS</button>
         </div>
 
