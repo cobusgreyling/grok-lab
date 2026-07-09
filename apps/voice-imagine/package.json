@@ -9,9 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "framer-motion": "^12.40.0",
-    "lucide-react": "^1.23.0",
-    "next": "16.2.7",
+    "framer-motion": "^12.42.2",
+    "lucide-react": "^1.24.0",
+    "next": "16.2.10",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "sonner": "^2.0.7"
